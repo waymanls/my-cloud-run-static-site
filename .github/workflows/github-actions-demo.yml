@@ -1,0 +1,48 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "dev" ]
+
+jobs:
+  docker-release:
+    name: Tagged Docker release to Google Artifact Registry
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v2
+
+      - id: auth
+        name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v0
+        with:
+          token_format: access_token
+          workload_identity_provider: projects/349629204212/locations/global/workloadIdentityPools/test-pool/providers/github-test
+          service_account: workload-identity-test-pool-sa@wayman-dev.iam.gserviceaccount.com
+          access_token_lifetime: 300s
+
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v1
+        with:
+          registry: us-west2-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Get tag
+        id: get-tag
+        run: echo ::set-output name=short_ref::${GITHUB_REF#refs/*/}
+
+      - id: docker-push-tagged
+        name: Tag Docker image and push to Google Artifact Registry
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: |
+             us-central1-docker.pkg.dev/wayman-dev/test/my-app:${{ steps.get-tag.outputs.short_ref }}
+             us-central1-docker.pkg.dev/wayman-dev/test/my-app:latest
