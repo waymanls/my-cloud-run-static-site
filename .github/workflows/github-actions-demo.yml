@@ -23,9 +23,7 @@ jobs:
         name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
         with:
-          create_credentials_file: true
           workload_identity_provider: projects/349629204212/locations/global/workloadIdentityPools/test-pool/providers/github-test
-          service_account: workload-identity-test-pool-sa@wayman-dev.iam.gserviceaccount.com
           access_token_lifetime: 300s
 
       - name: Login to Artifact Registry
